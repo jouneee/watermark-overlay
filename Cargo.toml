@@ -1,0 +1,9 @@
+[package]
+name = "watermark-overlay"
+version = "1.0.0"
+edition = "2024"
+
+[dependencies]
+image = "0.25.0"
+walkdir = "2.5.0"
+clap = { version = "4.0", features = ["derive"] }
