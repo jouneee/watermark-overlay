@@ -1,4 +1,4 @@
-use std::{path::PathBuf, process::Output};
+use std::{path::PathBuf, process::Output, fs};
 use clap::Parser;
 use image::{DynamicImage, GenericImage, imageops};
 use walkdir::WalkDir;
@@ -27,13 +27,17 @@ fn main() {
         std::process::exit(1);
     }
 
-    if !args.input.exists() || !args.input.is_dir() {
-        eprintln!("Input dir does not exist or is not directory {:?}", args.input);
+    let watermark = image::open(&args.watermark)
+        .expect("Failed to open watermark image");
+
+    if !args.input.exists() {
+        eprintln!("Input does not exist {:?}", args.input);
         std::process::exit(1);
     }
 
-    let watermark = image::open(&args.watermark)
-        .expect("Failed to open watermark image");
+    if !args.output.exists() {
+        fs::create_dir(&args.output).expect("failed to create dir");
+    }
 
     for image in WalkDir::new(&args.input)
         .into_iter()
@@ -42,7 +46,7 @@ fn main() {
     {
         let input_path = image.path();
 
-        if !["jpg", "jpeg", "png", "bmp", "gif"].contains(
+        if !["jpg", "jpeg", "png", "bmp"].contains(
             &input_path
                 .extension()
                 .and_then(|e| e.to_str())
@@ -77,10 +81,8 @@ fn main() {
         imageops::overlay(&mut main_image, &resized_watermark, x, y);
 
         let output_path = args.output.join(input_path.file_name().unwrap()).with_extension("png");
-        
-        if let Err(e) = main_image.save(output_path) {
-            eprintln!("Failed to output image: {}", e);
-        }
+
+        main_image.save(&output_path).expect("failed to save output image")
 
     }
 
